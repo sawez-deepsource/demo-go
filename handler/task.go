@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"demo-go/model"
-	"demo-go/store"
+	"github.com/sawez-deepsource/demo-go/model"
+	"github.com/sawez-deepsource/demo-go/store"
 )
 
 func ListTasks(w http.ResponseWriter, r *http.Request) {

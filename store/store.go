@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	"demo-go/model"
+	"github.com/sawez-deepsource/demo-go/model"
 )
 
 var (
-	mu    sync.RWMutex
-	tasks = map[string]model.Task{}
+	mu     sync.RWMutex
+	tasks  = map[string]model.Task{}
 	nextID = 1
 )
 

@@ -1,4 +1,15 @@
-version =1
+version = 1
+
+test_patterns = [
+  "tests/*_test.go",
+  "**/*_test.go"
+]
+
 [[analyzers]]
-name="go"
-enabled =true
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_root = "github.com/sawez-deepsource/demo-go"
+  dependencies_vendored = false
+  cgo_enabled = false

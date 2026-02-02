@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"demo-go/handler"
+	"github.com/sawez-deepsource/demo-go/handler"
 )
 
 func TestCreateAndListTasks(t *testing.T) {
