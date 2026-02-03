@@ -1,5 +1,9 @@
 name: Bump Go Version (Demo)
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   schedule:
     # Run every 15 minutes for demo/testing
