@@ -80,4 +80,3 @@ jobs:
           delete-branch: true
           reviewers: |
             sawez-deepsource
-            anto-deepsource
