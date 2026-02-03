@@ -1,0 +1,92 @@
+name: Bump Go Version
+
+on:
+  schedule:
+    # Run every 15 minutes (demo / test cadence)
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-and-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get current Go version
+        id: current
+        run: |
+          CURRENT=$(grep '^go ' go.mod | awk '{print $2}')
+          echo "version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT"
+
+      - name: Get latest Go version
+        id: latest
+        run: |
+          # Get latest stable release from Go's official API
+          LATEST=$(curl -s 'https://go.dev/dl/?mode=json' | jq -r '.[0].version' | sed 's/go//')
+          echo "version=$LATEST" >> $GITHUB_OUTPUT
+          echo "Latest version: $LATEST"
+
+      - name: Check if update needed
+        id: check
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          LATEST="${{ steps.latest.outputs.version }}"
+
+          # Extract minor versions (e.g., 1.25 from 1.25.4)
+          CURRENT_MINOR=$(echo "$CURRENT" | cut -d. -f1,2)
+          LATEST_MINOR=$(echo "$LATEST" | cut -d. -f1,2)
+
+          # Only update if same minor version (patch update)
+          if [[ "$CURRENT_MINOR" == "$LATEST_MINOR" && "$CURRENT" != "$LATEST" ]]; then
+            echo "update=true" >> $GITHUB_OUTPUT
+          else
+            echo "update=false" >> $GITHUB_OUTPUT
+
+            # Emit a GitHub Actions notice explaining why the Go version bump was skipped
+            # (either already on the latest patch, or a minor/major upgrade requiring manual review)
+            if [[ "$CURRENT_MINOR" != "$LATEST_MINOR" ]]; then
+              echo "::notice title=Manual Go upgrade available::Go minor or major version changed. Current: ${CURRENT}, Latest: ${LATEST}. Manual upgrade required."
+            else
+              echo "::notice title=Go already up-to-date::Current Go version (${CURRENT}) is already the latest patch."
+            fi
+          fi
+
+      - name: Set up Go
+        if: steps.check.outputs.update == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.latest.outputs.version }}
+
+      - name: Update Go version in files
+        if: steps.check.outputs.update == 'true'
+        run: |
+          OLD="${{ steps.current.outputs.version }}"
+          NEW="${{ steps.latest.outputs.version }}"
+
+          # Update all files
+          sed -i "s/go-version: ${OLD}/go-version: ${NEW}/g" .github/workflows/ide-release.yml
+          sed -i "s/go-version: \"${OLD}\"/go-version: \"${NEW}\"/g" .github/workflows/tests.yml
+          sed -i "s/golang:${OLD}-/golang:${NEW}-/g" Dockerfile
+          sed -i "s/^go ${OLD}/go ${NEW}/" go.mod
+
+      - name: Run go mod tidy
+        if: steps.check.outputs.update == 'true'
+        run: go mod tidy
+
+      - name: Create Pull Request
+        if: steps.check.outputs.update == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump go version to go ${{ steps.latest.outputs.version }}"
+          title: "chore: bump go version to go ${{ steps.latest.outputs.version }}"
+          body: |
+            Automated PR to update Go from `${{ steps.current.outputs.version }}` to `${{ steps.latest.outputs.version }}`.
+
+            Release notes: https://go.dev/doc/devel/release#go${{ steps.latest.outputs.version }}
+          branch: "chore/bump-go-${{ steps.latest.outputs.version }}"
+          delete-branch: true
+          reviewers: |
+            sawez-deepsource
+            anto-deepsource
