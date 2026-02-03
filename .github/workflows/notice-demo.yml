@@ -1,0 +1,15 @@
+name: Notice Demo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "* * * * *" # runs every minute
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit a notice
+        run: |
+          echo "::notice title=Hello from terminal::This notice was triggered from a terminal-created workflow"
+          echo "Normal log line"
