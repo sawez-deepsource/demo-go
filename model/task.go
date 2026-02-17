@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Priority int
 
@@ -46,4 +49,56 @@ func Invalidate(){
 }
 func ValidatePriority(p Priority) bool {
 	return p >= PriorityLow && p <= PriorityHigh
+}
+
+// -------------------------------------------------------
+// Planted issues in model/task.go
+// -------------------------------------------------------
+
+// RVV-B0006: Value receiver modifies field (lost)
+func (t Task) ClearTitle() {
+	t.Title = ""       // BAD: value receiver, change lost
+	t.Description = "" // BAD: value receiver, change lost
+}
+
+// CRT-D0003: Impossible condition
+func ImpossiblePriority(p Priority) bool {
+	if p < 0 && p > 10 { // BAD: can't be both
+		return true
+	}
+	return false
+}
+
+// GO-W5009: Negative zero
+func ZeroPriority() Priority {
+	return Priority(-0.0) // BAD: -0.0 == 0.0
+}
+
+// VET-V0004: Redundant boolean
+func IsHighPriority(t Task) bool {
+	return t.Priority == PriorityHigh || t.Priority == PriorityHigh // BAD: duplicate
+}
+
+// RVV-B0001: Confusing naming
+type TaskInfo struct {
+	name string // BAD: same name different case
+	Name string
+}
+
+// GO-W: Naked return
+func ParsePriority(s string) (p Priority, err error) {
+	switch s {
+	case "low":
+		p = PriorityLow
+		return // BAD: naked return
+	case "medium":
+		p = PriorityMedium
+		return // BAD: naked return
+	case "high":
+		p = PriorityHigh
+		return // BAD: naked return
+	default:
+		err = fmt.Errorf("unknown priority: %s", s)
+		return // BAD: naked return
+	}
 }

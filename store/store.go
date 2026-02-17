@@ -2,7 +2,11 @@ package store
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -114,4 +118,70 @@ func FilterByPriority(p model.Priority) []model.Task {
 		return out[i].ID < out[j].ID
 	})
 	return out
+}
+
+// -------------------------------------------------------
+// Planted issues in store/store.go
+// -------------------------------------------------------
+
+// VET-V0008: Mutex copy
+type SafeStore struct {
+	mu   sync.Mutex
+	data map[string]string
+}
+
+func CopySafeStore() {
+	original := SafeStore{data: map[string]string{"a": "1"}}
+	original.mu.Lock()
+	copied := original // BAD: copies locked mutex
+	copied.mu.Unlock()
+	original.mu.Unlock()
+}
+
+// GO-W / SCC: WaitGroup Add inside goroutine
+func ConcurrentLoad() {
+	var wg sync.WaitGroup
+	for i := 0; i < 5; i++ {
+		go func(n int) {
+			wg.Add(1) // BAD: Add must be before goroutine
+			defer wg.Done()
+			fmt.Println(n)
+		}(i)
+	}
+	wg.Wait()
+}
+
+// CRT-deferInLoop: Defer in loop
+func DeferInLoop(ids []string) {
+	for _, id := range ids {
+		defer fmt.Println(id) // BAD: defers pile up
+	}
+}
+
+// SCC-SA1000: Invalid regex
+func BadSearch() {
+	_ = regexp.MustCompile(`[invalid`) // BAD: unclosed bracket
+}
+
+// GO-W5006: Comparing address against nil
+func NeverNilCheck() bool {
+	s := SafeStore{}
+	return &s != nil // BAD: always true
+}
+
+// GSC-G306: Insecure file permissions
+func DumpTasks(data []byte) error {
+	return os.WriteFile("/tmp/task_dump.txt", data, 0777) // BAD: world-writable
+}
+
+// SCC-SA6005: strings.ToLower comparison
+func MatchID(a, b string) bool {
+	return strings.ToLower(a) == strings.ToLower(b) // BAD: use EqualFold
+}
+
+// GO-W5010: url.URL.Query() returns copy
+func BadQueryMod(rawURL string) string {
+	u, _ := url.Parse(rawURL)
+	u.Query().Add("page", "1") // BAD: modifying copy
+	return u.String()
 }

@@ -2,15 +2,20 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/sawez-deepsource/demo-go/handler"
 )
+
+// GSC-G101: Hardcoded credentials
+var adminToken = "Bearer super-secret-admin-token-12345"
 
 func main() {
 	mux := http.NewServeMux()
@@ -60,3 +65,42 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
 	})
 }
+
+// -------------------------------------------------------
+// Planted issues in main.go
+// -------------------------------------------------------
+
+// SCC-SA1004: Suspiciously small time.Sleep
+func warmupDelay() {
+	time.Sleep(10) // BAD: 10 nanoseconds
+}
+
+// CRT-A0001: Shadowing builtin
+func shadowLen() int {
+	len := 42 // BAD: shadows builtin
+	return len
+}
+
+// GO-W: Goroutine leak — channel never read
+func leakyStartup() {
+	ch := make(chan int)
+	go func() {
+		ch <- 1 // BAD: blocks forever
+	}()
+}
+
+// SCC-SA2001: Empty critical section
+func emptyLock() {
+	var mu sync.Mutex
+	mu.Lock()
+	mu.Unlock() // BAD: empty critical section
+}
+
+// VET-V0013: Printf format mismatch
+func badLog() {
+	port := "8000"
+	fmt.Printf("listening on port %d\n", port) // BAD: %d for string
+}
+
+// SCC-U1000: unused
+var _ = adminToken

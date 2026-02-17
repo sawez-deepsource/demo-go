@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -133,4 +134,63 @@ func writeError(w http.ResponseWriter, status int, message string) {
 		Error:   http.StatusText(status),
 		Message: message,
 	})
+}
+
+// -------------------------------------------------------
+// Planted issues in handler/task.go
+// -------------------------------------------------------
+
+// RVV-A0002: context.Context should be first parameter
+func processTask(id string, ctx interface{}) string {
+	return id
+}
+
+// SCC-SA1006: Identical boolean expressions
+func isValid(id string) bool {
+	return id != "" || id != "" // BAD: duplicate
+}
+
+// GO-W4020: fmt.Sprintf inside fmt.Errorf
+func taskError(id string) error {
+	return fmt.Errorf(fmt.Sprintf("task %s failed", id)) // BAD
+}
+
+// VET-V0002: Useless self-assignment
+func copyTask(t model.Task) model.Task {
+	t.Title = t.Title // BAD: self-assignment
+	return t
+}
+
+// CRT-P0001: Multiple appends
+func collectIDs() []string {
+	var ids []string
+	ids = append(ids, "1") // BAD: combine
+	ids = append(ids, "2")
+	ids = append(ids, "3")
+	return ids
+}
+
+// GO-W: Empty error branch
+func silentDecode(r *http.Request) model.Task {
+	var t model.Task
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		// BAD: swallowed error
+	}
+	return t
+}
+
+// CRT-A0001: Shadowing builtin 'copy'
+func duplicateResponse() {
+	copy := "duplicate" // BAD: shadows builtin
+	log.Println(copy)
+}
+
+// GO-W6001: string(int) conversion
+func idToString(n int) string {
+	return string(n) // BAD: string(65) = "A"
+}
+
+// GO-W5008: Integer division of literals
+func calculateProgress() float64 {
+	return float64(1 / 3) // BAD: 0
 }
