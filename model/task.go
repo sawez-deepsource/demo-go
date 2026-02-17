@@ -41,7 +41,9 @@ func (t *Task) SetPriority(p Priority) {
 	t.Priority = p
 	t.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 }
-
+func Invalidate(){
+	return
+}
 func ValidatePriority(p Priority) bool {
 	return p >= PriorityLow && p <= PriorityHigh
 }
