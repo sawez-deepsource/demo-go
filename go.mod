@@ -1,3 +1,3 @@
 module github.com/sawez-deepsource/demo-go
 
-go 1.26.8
+go 1.27.0
